@@ -4,6 +4,8 @@ import cn.cloud.system.framework.common.enums.CommonStatusEnum;
 import cn.cloud.system.framework.common.pojo.PageResult;
 import cn.cloud.system.framework.common.util.collection.CollectionUtils;
 import cn.cloud.system.framework.common.util.object.BeanUtils;
+import cn.cloud.system.framework.common.util.validation.ValidationUtils;
+import cn.cloud.system.module.system.controller.admin.auth.vo.CaptchaVerificationReqVO;
 import cn.cloud.system.module.system.controller.admin.user.vo.profile.UserProfileUpdatePasswordReqVO;
 import cn.cloud.system.module.system.controller.admin.user.vo.profile.UserProfileUpdateReqVO;
 import cn.cloud.system.module.system.controller.admin.user.vo.user.UserPageReqVO;
@@ -16,12 +18,18 @@ import com.google.common.annotations.VisibleForTesting;
 import com.mzt.logapi.context.LogRecordContext;
 import com.mzt.logapi.service.impl.DiffParseFunction;
 import com.mzt.logapi.starter.annotation.LogRecord;
+import com.xingyuv.captcha.model.common.ResponseModel;
+import com.xingyuv.captcha.model.vo.CaptchaVO;
+import com.xingyuv.captcha.service.CaptchaService;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import javax.validation.Validator;
 import java.util.*;
 
 import static cn.cloud.system.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -44,6 +52,19 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Resource
     private PasswordEncoder passwordEncoder;
+
+    @Resource
+    private CaptchaService captchaService;
+
+    @Resource
+    private Validator validator;
+
+    /**
+     * 验证码的开关，默认为 true
+     */
+    @Value("${system.captcha.enable:true}")
+    @Setter // 为了单测：开启或者关闭验证码
+    private Boolean captchaEnable;
 
 
     @Override
@@ -105,6 +126,9 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Override
     public void updateUserPassword(Long id, UserProfileUpdatePasswordReqVO reqVO) {
+        // 校验验证码
+        validateCaptcha(reqVO);
+
         // 校验旧密码密码
         validateOldPassword(id, reqVO.getOldPassword());
         // 执行更新
@@ -286,4 +310,24 @@ public class AdminUserServiceImpl implements AdminUserService {
         return passwordEncoder.encode(password);
     }
 
+
+    @VisibleForTesting
+    void validateCaptcha(CaptchaVerificationReqVO reqVO) {
+        ResponseModel response = doValidateCaptcha(reqVO);
+        // 校验验证码
+        if (!response.isSuccess()) {
+            throw exception(AUTH_LOGIN_CAPTCHA_CODE_ERROR, response.getRepMsg());
+        }
+    }
+
+    private ResponseModel doValidateCaptcha(CaptchaVerificationReqVO reqVO) {
+        // 如果验证码关闭，则不进行校验
+        if (!captchaEnable) {
+            return ResponseModel.success();
+        }
+        ValidationUtils.validate(validator, reqVO, CaptchaVerificationReqVO.CodeEnableGroup.class);
+        CaptchaVO captchaVO = new CaptchaVO();
+        captchaVO.setCaptchaVerification(reqVO.getCaptchaVerification());
+        return captchaService.verification(captchaVO);
+    }
 }
