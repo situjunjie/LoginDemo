@@ -1,0 +1,3 @@
+cn.cloud.system.framework.jackson.config.SystemJacksonAutoConfiguration
+cn.cloud.system.framework.swagger.config.SystemSwaggerAutoConfiguration
+cn.cloud.system.framework.web.config.SystemWebAutoConfiguration

@@ -1,0 +1,2 @@
+cn.cloud.system.framework.security.config.SystemSecurityAutoConfiguration
+cn.cloud.system.framework.security.config.SystemWebSecurityConfigurerAdapter

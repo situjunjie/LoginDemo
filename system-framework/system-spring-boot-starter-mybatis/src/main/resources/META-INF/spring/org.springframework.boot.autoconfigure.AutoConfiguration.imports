@@ -1,0 +1,3 @@
+cn.cloud.system.framework.datasource.config.SystemDataSourceAutoConfiguration
+cn.cloud.system.framework.mybatis.config.SystemMybatisAutoConfiguration
+cn.cloud.system.framework.translate.config.SystemTranslateAutoConfiguration

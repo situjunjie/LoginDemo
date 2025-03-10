@@ -1,0 +1,2 @@
+cn.cloud.system.framework.redis.config.SystemRedisAutoConfiguration
+cn.cloud.system.framework.redis.config.SystemCacheAutoConfiguration
